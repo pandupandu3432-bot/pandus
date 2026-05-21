@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Attendance Prediction System</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap');
+
+  :root {
+    --neon-green: #00ff88;
+    --neon-blue: #00d4ff;
+    --dark-blue: #0a1628;
+    --mid-blue: #0d2040;
+    --glass: rgba(0,212,255,0.08);
+    --glass-border: rgba(0,212,255,0.25);
+    --text-main: #e0f7ff;
+    --text-muted: #7ab8d4;
+    --accent: #00ff88;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Rajdhani', sans-serif;
+    background: #020c18;
+    color: var(--text-main);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── ANIMATED CANVAS BACKGROUND ── */
+  #bgCanvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .page-wrapper { position: relative; z-index: 1; }
+
+  /* ── HEADER / COLLEGE SECTION ── */
+  .college-header {
+    background: linear-gradient(180deg, rgba(0,10,25,0.98) 0%, rgba(5,20,45,0.95) 100%);
+    border-bottom: 1px solid var(--glass-border);
+    padding: 18px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    backdrop-filter: blur(20px);
+    position: relative;
+  }
+  .college-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--neon-blue), var(--neon-green), var(--neon-blue), transparent);
+    animation: scanLine 3s linear infinite;
+  }
+  @keyframes scanLine {
+    0%   { background-position: -100% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  .college-logo {
+    width: 70px; height: 70px;
+    background: linear-gradient(135deg, var(--neon-blue) 0%, var(--neon-green) 100%);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 22px; font-weight: 900;
+    color: #020c18;
+    box-shadow: 0 0 25px rgba(0,212,255,0.6), 0 0 50px rgba(0,212,255,0.2);
+    flex-shrink: 0;
+    animation: pulse-logo 2.5s ease-in-out infinite;
+  }
+  @keyframes pulse-logo {
+    0%,100% { box-shadow: 0 0 25px rgba(0,212,255,0.6), 0 0 50px rgba(0,212,255,0.2); }
+    50% { box-shadow: 0 0 35px rgba(0,255,136,0.8), 0 0 70px rgba(0,255,136,0.3); }
+  }
+
+  .college-info { flex: 1; text-align: center; padding: 0 20px; }
+  .college-name {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 22px; font-weight: 800;
+    color: var(--neon-blue);
+    text-shadow: 0 0 20px rgba(0,212,255,0.8);
+    letter-spacing: 2px;
+    line-height: 1.2;
+  }
+  .project-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 14px; font-weight: 600;
+    color: var(--neon-green);
+    letter-spacing: 4px;
+    margin-top: 6px;
+    text-shadow: 0 0 15px rgba(0,255,136,0.7);
+    animation: flicker 4s ease-in-out infinite;
+  }
+  @keyframes flicker {
+    0%,95%,100% { opacity: 1; }
+    96% { opacity: 0.7; }
+    97% { opacity: 1; }
+    98% { opacity: 0.6; }
+  }
+
+  .authors-section {
+    text-align: right;
+    min-width: 200px;
+  }
+  .authors-label {
+    font-size: 11px; letter-spacing: 3px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .author-name {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    color: var(--neon-green);
+    line-height: 1.7;
+    text-shadow: 0 0 8px rgba(0,255,136,0.4);
+  }
+
+  /* ── HERO SECTION ── */
+  .hero {
+    text-align: center;
+    padding: 50px 40px 30px;
+    position: relative;
+  }
+  .hero-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(28px, 4vw, 48px);
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--neon-blue) 0%, var(--neon-green) 50%, var(--neon-blue) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    background-size: 200% auto;
+    animation: shimmer 3s linear infinite;
+    margin-bottom: 10px;
+  }
+  @keyframes shimmer {
+    0% { background-position: 0% center; }
+    100% { background-position: 200% center; }
+  }
+  .hero-sub {
+    font-size: 16px; color: var(--text-muted);
+    letter-spacing: 2px;
+  }
+
+  /* ── ENTER BUTTON ── */
+  .enter-section {
+    text-align: center;
+    padding: 20px 0 40px;
+  }
+  .btn-enter {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 16px; font-weight: 700;
+    letter-spacing: 3px;
+    padding: 16px 50px;
+    background: transparent;
+    border: 2px solid var(--neon-green);
+    color: var(--neon-green);
+    cursor: pointer;
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+    text-transform: uppercase;
+    box-shadow: 0 0 20px rgba(0,255,136,0.3), inset 0 0 20px rgba(0,255,136,0.05);
+  }
+  .btn-enter::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(0,255,136,0.2), transparent);
+    transition: left 0.4s;
+  }
+  .btn-enter:hover::before { left: 100%; }
+  .btn-enter:hover {
+    background: rgba(0,255,136,0.1);
+    box-shadow: 0 0 40px rgba(0,255,136,0.6), inset 0 0 30px rgba(0,255,136,0.15);
+    transform: translateY(-2px);
+  }
+
+  /* ── MAIN PREDICTION PANEL ── */
+  #predictionPanel {
+    display: none;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 30px 60px;
+    animation: fadeIn 0.6s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ── SECTION LABEL ── */
+  .section-label {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 11px; letter-spacing: 4px;
+    color: var(--neon-blue);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .section-label::before, .section-label::after {
+    content: ''; flex: 1; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--neon-blue));
+  }
+  .section-label::after { background: linear-gradient(90deg, var(--neon-blue), transparent); }
+
+  /* ── GLASS CARD ── */
+  .glass-card {
+    background: rgba(0,212,255,0.04);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    backdrop-filter: blur(10px);
+    position: relative;
+    overflow: hidden;
+  }
+  .glass-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(0,212,255,0.5), transparent);
+  }
+
+  /* ── INPUT GRID ── */
+  .input-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 18px;
+    margin-bottom: 24px;
+  }
+  .input-group label {
+    display: block;
+    font-size: 11px; letter-spacing: 2px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .input-group input, .input-group select {
+    width: 100%;
+    background: rgba(0,10,30,0.8);
+    border: 1px solid rgba(0,212,255,0.3);
+    border-radius: 6px;
+    padding: 11px 14px;
+    color: var(--text-main);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.3s;
+  }
+  .input-group input:focus, .input-group select:focus {
+    border-color: var(--neon-blue);
+    box-shadow: 0 0 15px rgba(0,212,255,0.3);
+  }
+  .input-group select option { background: #0a1628; }
+
+  /* ── PREDICT BUTTON ── */
+  .btn-predict {
+    width: 100%;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 15px; font-weight: 700;
+    letter-spacing: 3px;
+    padding: 18px;
+    background: linear-gradient(135deg, rgba(0,212,255,0.15), rgba(0,255,136,0.15));
+    border: 1px solid var(--neon-blue);
+    color: var(--neon-blue);
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.3s;
+    text-transform: uppercase;
+    position: relative; overflow: hidden;
+  }
+  .btn-predict:hover {
+    background: linear-gradient(135deg, rgba(0,212,255,0.25), rgba(0,255,136,0.25));
+    box-shadow: 0 0 30px rgba(0,212,255,0.4);
+    transform: translateY(-2px);
+  }
+  .btn-predict:disabled { opacity: 0.5; cursor: wait; }
+
+  /* ── LOADING BAR ── */
+  .loading-bar-wrap {
+    display: none;
+    height: 3px;
+    background: rgba(0,212,255,0.1);
+    border-radius: 3px;
+    margin-top: 12px;
+    overflow: hidden;
+  }
+  .loading-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--neon-blue), var(--neon-green));
+    border-radius: 3px;
+    animation: loadAnim 2.5s ease-in-out;
+  }
+  @keyframes loadAnim { from { width: 0%; } to { width: 100%; } }
+
+  /* ── RESULT CARDS ── */
+  .result-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  .result-card {
+    background: rgba(0,10,30,0.7);
+    border: 1px solid rgba(0,255,136,0.2);
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s;
+  }
+  .result-card:hover { transform: translateY(-4px); }
+  .result-card::before {
+    content: '';
+    position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+    background: var(--neon-green);
+    box-shadow: 0 0 10px var(--neon-green);
+  }
+  .result-val {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 36px; font-weight: 900;
+    color: var(--neon-green);
+    text-shadow: 0 0 20px rgba(0,255,136,0.7);
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .result-lbl {
+    font-size: 11px; letter-spacing: 2px;
+    color: var(--text-muted); text-transform: uppercase;
+  }
+  .result-card.danger .result-val { color: #ff4d6d; text-shadow: 0 0 20px rgba(255,77,109,0.7); }
+  .result-card.danger::before { background: #ff4d6d; box-shadow: 0 0 10px #ff4d6d; }
+  .result-card.warn .result-val { color: #ffd700; text-shadow: 0 0 20px rgba(255,215,0,0.7); }
+  .result-card.warn::before { background: #ffd700; box-shadow: 0 0 10px #ffd700; }
+
+  /* ── AI ADVICE ── */
+  .ai-advice {
+    background: rgba(0,255,136,0.04);
+    border: 1px solid rgba(0,255,136,0.25);
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 24px;
+    position: relative;
+    display: none;
+  }
+  .ai-advice-tag {
+    position: absolute; top: -11px; left: 20px;
+    background: var(--neon-green);
+    color: #020c18;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 2px;
+    padding: 3px 12px;
+    border-radius: 3px;
+  }
+  .ai-advice-text {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 16px; line-height: 1.7;
+    color: var(--text-main);
+  }
+  .ai-typing { display: inline-block; }
+  .ai-typing::after {
+    content: '|';
+    animation: blink 0.8s step-end infinite;
+  }
+  @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+
+  /* ── CHARTS ── */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 24px;
+    margin-bottom: 24px;
+  }
+  .chart-card {
+    background: rgba(0,10,30,0.7);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 24px;
+    position: relative;
+  }
+  .chart-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 11px; letter-spacing: 3px;
+    color: var(--neon-blue);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .chart-container { position: relative; height: 220px; }
+
+  /* ── RISK GAUGE ── */
+  .gauge-wrap { text-align: center; padding: 10px 0; }
+  #gaugeCanvas { max-width: 280px; }
+
+  /* ── STATUS BADGE ── */
+  .status-badge {
+    display: inline-block;
+    padding: 6px 18px;
+    border-radius: 20px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 12px; font-weight: 700;
+    letter-spacing: 2px;
+    margin-top: 10px;
+  }
+  .status-safe { background: rgba(0,255,136,0.15); color: var(--neon-green); border: 1px solid rgba(0,255,136,0.4); }
+  .status-at-risk { background: rgba(255,215,0,0.15); color: #ffd700; border: 1px solid rgba(255,215,0,0.4); }
+  .status-critical { background: rgba(255,77,109,0.15); color: #ff4d6d; border: 1px solid rgba(255,77,109,0.4); }
+
+  /* ── HISTORY TABLE ── */
+  .history-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    margin-top: 10px;
+  }
+  .history-table th {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 10px; letter-spacing: 2px;
+    color: var(--neon-blue);
+    text-transform: uppercase;
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(0,212,255,0.2);
+    text-align: left;
+  }
+  .history-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    color: var(--text-main);
+  }
+  .history-table tr:hover td { background: rgba(0,212,255,0.04); }
+
+  /* ── IMAGES SECTION ── */
+  .img-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+  .img-card {
+    background: rgba(0,10,30,0.7);
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: transform 0.3s;
+  }
+  .img-card:hover { transform: scale(1.02); }
+  .img-placeholder {
+    height: 160px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 12px;
+  }
+  .img-icon { font-size: 48px; opacity: 0.5; }
+  .img-label {
+    font-size: 12px; letter-spacing: 2px;
+    color: var(--text-muted); text-transform: uppercase;
+    text-align: center; padding: 10px;
+  }
+  .img-bg-1 { background: linear-gradient(135deg, rgba(0,212,255,0.1), rgba(0,255,136,0.05)); }
+  .img-bg-2 { background: linear-gradient(135deg, rgba(0,255,136,0.1), rgba(0,100,200,0.05)); }
+  .img-bg-3 { background: linear-gradient(135deg, rgba(200,0,255,0.08), rgba(0,212,255,0.05)); }
+
+  /* ── FOOTER ── */
+  .footer {
+    text-align: center;
+    padding: 30px;
+    border-top: 1px solid var(--glass-border);
+    color: var(--text-muted);
+    font-size: 12px; letter-spacing: 2px;
+  }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: #020c18; }
+  ::-webkit-scrollbar-thumb { background: rgba(0,212,255,0.3); border-radius: 3px; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 600px) {
+    .college-header { flex-direction: column; gap: 12px; text-align: center; padding: 16px; }
+    .authors-section { text-align: center; }
+    .college-name { font-size: 16px; }
+    #predictionPanel { padding: 0 16px 40px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Animated Canvas Background -->
+<canvas id="bgCanvas"></canvas>
+
+<div class="page-wrapper">
+
+  <!-- ══ COLLEGE HEADER ══ -->
+  <header class="college-header">
+    <div class="college-logo">AI</div>
+
+    <div class="college-info">
+      <div class="college-name">S V COLLEGE OF ENGINEERING, PUTTUR</div>
+      <div class="project-title">⬡ &nbsp; STUDENT ATTENDANCE PREDICTION &nbsp; ⬡</div>
+    </div>
+
+    <div class="authors-section">
+      <div class="authors-label">Project Team</div>
+      <div class="author-name">▸ Ravi Kumar S</div>
+      <div class="author-name">▸ Priya Dharshini M</div>
+      <div class="author-name">▸ Karthik Raj N</div>
+      <div class="author-name">▸ Nithya Lakshmi A</div>
+      <div class="author-name">▸ Suriya Prakash G</div>
+    </div>
+  </header>
+
+  <!-- ══ HERO ══ -->
+  <div class="hero">
+    <div class="hero-title">AI-POWERED ATTENDANCE PREDICTOR</div>
+    <div class="hero-sub">Machine Learning &nbsp;·&nbsp; Real-Time Analytics &nbsp;·&nbsp; Smart Insights</div>
+  </div>
+
+  <!-- ══ ENTER BUTTON ══ -->
+  <div class="enter-section">
+    <button class="btn-enter" onclick="openPredictor()">
+      ⬡ &nbsp; ENTER PREDICTION SYSTEM &nbsp; ⬡
+    </button>
+  </div>
+
+  <!-- ══ MAIN PREDICTION PANEL ══ -->
+  <div id="predictionPanel">
+
+    <!-- INPUT SECTION -->
+    <div class="glass-card">
+      <div class="section-label">Student Data Input</div>
+
+      <div class="input-grid">
+        <div class="input-group">
+          <label>Student Name</label>
+          <input type="text" id="studentName" placeholder="e.g. Ravi Kumar" />
+        </div>
+        <div class="input-group">
+          <label>Student ID</label>
+          <input type="text" id="studentId" placeholder="e.g. 21CSE0045" />
+        </div>
+        <div class="input-group">
+          <label>Department</label>
+          <select id="dept">
+            <option>Computer Science</option>
+            <option>Electronics & Comm</option>
+            <option>Mechanical</option>
+            <option>Civil Engineering</option>
+            <option>Information Technology</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label>Semester</label>
+          <select id="sem">
+            <option>1st Semester</option>
+            <option>2nd Semester</option>
+            <option>3rd Semester</option>
+            <option>4th Semester</option>
+            <option>5th Semester</option>
+            <option>6th Semester</option>
+            <option>7th Semester</option>
+            <option>8th Semester</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label>Total Classes Held</label>
+          <input type="number" id="totalClasses" placeholder="e.g. 90" min="1" />
+        </div>
+        <div class="input-group">
+          <label>Classes Attended</label>
+          <input type="number" id="attended" placeholder="e.g. 72" min="0" />
+        </div>
+        <div class="input-group">
+          <label>Days Absent (Month)</label>
+          <input type="number" id="absentDays" placeholder="e.g. 4" min="0" />
+        </div>
+        <div class="input-group">
+          <label>Distance (km)</label>
+          <input type="number" id="distance" placeholder="e.g. 12" min="0" />
+        </div>
+        <div class="input-group">
+          <label>Prev. Semester GPA</label>
+          <input type="number" id="gpa" placeholder="e.g. 7.8" step="0.1" min="0" max="10" />
+        </div>
+        <div class="input-group">
+          <label>Health Issues</label>
+          <select id="health">
+            <option value="none">None</option>
+            <option value="minor">Minor (Cold/Fever)</option>
+            <option value="moderate">Moderate</option>
+            <option value="major">Major</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label>Extracurricular</label>
+          <select id="extra">
+            <option value="0">None</option>
+            <option value="1">Sports</option>
+            <option value="2">Cultural / Events</option>
+            <option value="3">Multiple Activities</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label>Family Status</label>
+          <select id="family">
+            <option value="stable">Stable</option>
+            <option value="moderate">Moderate Stress</option>
+            <option value="critical">Critical</option>
+          </select>
+        </div>
+      </div>
+
+      <button class="btn-predict" id="predictBtn" onclick="runPrediction()">
+        ⬡ &nbsp; RUN AI ATTENDANCE PREDICTION &nbsp; ⬡
+      </button>
+      <div class="loading-bar-wrap" id="loadBar"><div class="loading-bar-fill"></div></div>
+    </div>
+
+    <!-- RESULTS SECTION (hidden until prediction) -->
+    <div id="resultsSection" style="display:none;">
+
+      <!-- METRIC CARDS -->
+      <div class="section-label">Prediction Results</div>
+      <div class="result-grid">
+        <div class="result-card" id="rc1">
+          <div class="result-val" id="rv1">--</div>
+          <div class="result-lbl">Current Attendance %</div>
+        </div>
+        <div class="result-card" id="rc2">
+          <div class="result-val" id="rv2">--</div>
+          <div class="result-lbl">Predicted End-Term %</div>
+        </div>
+        <div class="result-card" id="rc3">
+          <div class="result-val" id="rv3">--</div>
+          <div class="result-lbl">Classes to Attend</div>
+        </div>
+        <div class="result-card" id="rc4">
+          <div class="result-val" id="rv4">--</div>
+          <div class="result-lbl">Risk Score</div>
+        </div>
+        <div class="result-card" id="rc5">
+          <div class="result-val" id="rv5">--</div>
+          <div class="result-lbl">Eligible for Exam</div>
+        </div>
+        <div class="result-card" id="rc6">
+          <div class="result-val" id="rv6">--</div>
+          <div class="result-lbl">AI Confidence</div>
+        </div>
+      </div>
+
+      <!-- AI ADVICE -->
+      <div class="ai-advice" id="aiAdviceBox">
+        <div class="ai-advice-tag">⬡ AI ADVISOR</div>
+        <div class="ai-advice-text" id="aiAdviceText"></div>
+      </div>
+
+      <!-- CHARTS -->
+      <div class="section-label">Visual Analytics</div>
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-title">📊 Attendance Trend (Weeks)</div>
+          <div class="chart-container"><canvas id="trendChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">🍩 Attendance Breakdown</div>
+          <div class="chart-container"><canvas id="donutChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">📈 Subject-wise Attendance</div>
+          <div class="chart-container"><canvas id="barChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">🎯 Risk Gauge</div>
+          <div class="gauge-wrap">
+            <canvas id="gaugeCanvas" width="280" height="160"></canvas>
+            <div id="gaugeLabel" class="status-badge status-safe">SAFE</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PREDICTION IMAGES -->
+      <div class="section-label">Prediction Insights</div>
+      <div class="img-section">
+        <div class="img-card">
+          <div class="img-placeholder img-bg-1">
+            <div class="img-icon">🧠</div>
+          </div>
+          <div class="img-label">ML Model: Random Forest + Neural Net</div>
+        </div>
+        <div class="img-card">
+          <div class="img-placeholder img-bg-2">
+            <div class="img-icon">📉</div>
+          </div>
+          <div class="img-label">Dropout Risk Pattern Analysis</div>
+        </div>
+        <div class="img-card">
+          <div class="img-placeholder img-bg-3">
+            <div class="img-icon">🔮</div>
+          </div>
+          <div class="img-label">AI Forecasting Engine Active</div>
+        </div>
+      </div>
+
+      <!-- HISTORY TABLE -->
+      <div class="glass-card">
+        <div class="section-label">Prediction History Log</div>
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>ID</th>
+              <th>Department</th>
+              <th>Current %</th>
+              <th>Predicted %</th>
+              <th>Status</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody id="historyBody">
+            <tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:20px;">No history yet — run a prediction.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div><!-- /resultsSection -->
+  </div><!-- /predictionPanel -->
+
+  <div class="footer">
+    © 2026 &nbsp; S V College of Engineering, Puttur &nbsp;·&nbsp; AI Attendance Prediction System &nbsp;·&nbsp; Powered by Machine Learning
+  </div>
+</div><!-- /page-wrapper -->
+
+<!-- ═══════════════════════════ SCRIPTS ═══════════════════════════ -->
+<script>
+/* ────────────────────────────────────────────────────────────────
+   ANIMATED BACKGROUND: Full Moon + Bamboo Trees + Stars + Particles
+   ──────────────────────────────────────────────────────────────── */
+const canvas = document.getElementById('bgCanvas');
+const ctx = canvas.getContext('2d');
+let W, H, stars = [], particles = [], tailDrops = [], bamboos = [];
+
+function resize() {
+  W = canvas.width  = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  buildScene();
+}
+
+function buildScene() {
+  /* Stars */
+  stars = [];
+  for (let i = 0; i < 160; i++) stars.push({
+    x: Math.random() * W, y: Math.random() * H * 0.75,
+    r: Math.random() * 1.5 + 0.3, a: Math.random(), da: (Math.random() - 0.5) * 0.015
+  });
+
+  /* Floating light particles */
+  particles = [];
+  for (let i = 0; i < 55; i++) particles.push({
+    x: Math.random() * W, y: Math.random() * H,
+    vx: (Math.random() - 0.5) * 0.4, vy: -(Math.random() * 0.3 + 0.1),
+    r: Math.random() * 2.5 + 0.5, a: Math.random(), life: Math.random()
+  });
+
+  /* Tail drops (meteor-like streaks) */
+  tailDrops = [];
+  for (let i = 0; i < 6; i++) spawnTail();
+
+  /* Bamboo trees (3 on left-bottom) */
+  bamboos = [
+    { x: 60,  baseY: H, segments: 14, lean: -0.05, thick: 14 },
+    { x: 110, baseY: H, segments: 16, lean: 0.03,  thick: 10 },
+    { x: 155, baseY: H, segments: 12, lean: -0.08, thick: 7  },
+  ];
+}
+
+function spawnTail() {
+  const x = Math.random() * W;
+  const y = Math.random() * H * 0.5;
+  tailDrops.push({ x, y, vx: 0.4 + Math.random() * 0.6, vy: 0.4 + Math.random() * 0.5, life: 1, tail: [] });
+}
+
+/* ── Draw full moon ── */
+function drawMoon() {
+  const mx = W * 0.86, my = H * 0.14, mr = 65;
+  /* Glow layers */
+  for (let i = 4; i > 0; i--) {
+    const g = ctx.createRadialGradient(mx, my, mr * 0.6, mx, my, mr * (1 + i * 0.5));
+    g.addColorStop(0, `rgba(180,230,255,${0.04 / i})`);
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(mx, my, mr * (1 + i * 0.5), 0, Math.PI * 2); ctx.fill();
+  }
+  /* Moon body */
+  const mg = ctx.createRadialGradient(mx - 20, my - 20, 10, mx, my, mr);
+  mg.addColorStop(0, '#d4eeff');
+  mg.addColorStop(0.6, '#a0c8e8');
+  mg.addColorStop(1, '#6a9db8');
+  ctx.fillStyle = mg;
+  ctx.beginPath(); ctx.arc(mx, my, mr, 0, Math.PI * 2); ctx.fill();
+  /* Craters */
+  [[mx - 15, my - 20, 8], [mx + 22, my + 10, 6], [mx - 5, my + 28, 5],
+   [mx + 10, my - 30, 4]].forEach(([cx, cy, cr]) => {
+    ctx.beginPath(); ctx.arc(cx, cy, cr, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(90,130,160,0.3)'; ctx.fill();
+  });
+}
+
+/* ── Draw bamboo (3D-ish segmented) ── */
+function drawBamboos() {
+  bamboos.forEach(b => {
+    let x = b.x, y = b.baseY;
+    const segH = 45, nodes = b.segments;
+    for (let i = 0; i < nodes; i++) {
+      const nx = x + b.lean * segH;
+      const ny = y - segH;
+      const green1 = `rgba(0,${60 + i * 8 > 180 ? 180 : 60 + i * 8},${20 + i * 3},${0.85 - i * 0.03})`;
+      const green2 = `rgba(0,${80 + i * 6 > 200 ? 200 : 80 + i * 6},${10 + i * 2},${0.6 - i * 0.02})`;
+      /* Segment body */
+      ctx.beginPath();
+      ctx.moveTo(x - b.thick / 2, y);
+      ctx.lineTo(nx - b.thick / 2, ny);
+      ctx.lineTo(nx + b.thick / 2 * 0.7, ny);
+      ctx.lineTo(x + b.thick / 2 * 0.7, y);
+      ctx.fillStyle = green1; ctx.fill();
+      /* Shading */
+      ctx.beginPath();
+      ctx.moveTo(nx - b.thick / 2, ny);
+      ctx.lineTo(nx - b.thick / 2 * 0.2, ny);
+      ctx.lineTo(x - b.thick / 2 * 0.2, y);
+      ctx.lineTo(x - b.thick / 2, y);
+      ctx.fillStyle = green2; ctx.fill();
+      /* Node line */
+      ctx.beginPath();
+      ctx.moveTo(x - b.thick / 2, y); ctx.lineTo(x + b.thick / 2 * 0.7, y);
+      ctx.strokeStyle = `rgba(0,180,60,0.5)`; ctx.lineWidth = 2; ctx.stroke();
+      /* Leaves on upper half */
+      if (i > nodes / 2 && i % 2 === 0) {
+        const side = i % 3 === 0 ? 1 : -1;
+        ctx.beginPath();
+        ctx.moveTo(nx, ny);
+        ctx.quadraticCurveTo(nx + side * 35, ny - 20, nx + side * 55, ny - 10);
+        ctx.quadraticCurveTo(nx + side * 40, ny - 5,  nx, ny);
+        ctx.fillStyle = `rgba(0,${150 + i * 3},40,0.55)`; ctx.fill();
+      }
+      x = nx; y = ny;
+      b.thick = Math.max(b.thick - 0.35, 2);
+    }
+    b.thick = bamboos[bamboos.indexOf(b)].thick; /* reset after draw iteration — no, use local copy */
+  });
+}
+
+/* ── Draw tail drops (meteors) ── */
+function drawTails() {
+  tailDrops.forEach((t, i) => {
+    t.tail.push({ x: t.x, y: t.y, a: t.life });
+    if (t.tail.length > 22) t.tail.shift();
+    t.tail.forEach((pt, j) => {
+      const alpha = (j / t.tail.length) * t.life * 0.6;
+      ctx.beginPath(); ctx.arc(pt.x, pt.y, 1.2, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(0,220,255,${alpha})`; ctx.fill();
+    });
+    ctx.beginPath(); ctx.arc(t.x, t.y, 2.5, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(180,255,255,${t.life})`; ctx.fill();
+    t.x += t.vx; t.y += t.vy; t.life -= 0.008;
+    if (t.life <= 0 || t.x > W + 50 || t.y > H + 50) { tailDrops.splice(i, 1); spawnTail(); }
+  });
+}
+
+/* ── Main animation loop ── */
+function draw() {
+  /* Background gradient */
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0,   '#010810');
+  bg.addColorStop(0.5, '#03122a');
+  bg.addColorStop(1,   '#000a06');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+
+  /* Stars */
+  stars.forEach(s => {
+    s.a += s.da;
+    if (s.a <= 0 || s.a >= 1) s.da *= -1;
+    ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(180,230,255,${s.a})`; ctx.fill();
+  });
+
+  drawMoon();
+
+  /* Ground fog */
+  const fog = ctx.createLinearGradient(0, H * 0.82, 0, H);
+  fog.addColorStop(0, 'rgba(0,30,20,0)');
+  fog.addColorStop(1, 'rgba(0,20,15,0.7)');
+  ctx.fillStyle = fog; ctx.fillRect(0, H * 0.82, W, H * 0.18);
+
+  drawBamboos();
+  drawTails();
+
+  /* Floating particles */
+  particles.forEach(p => {
+    p.x += p.vx; p.y += p.vy; p.life += 0.005;
+    if (p.y < -10 || p.life > 1) { p.y = H + 5; p.x = Math.random() * W; p.life = 0; }
+    const fade = Math.sin(p.life * Math.PI);
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(0,255,136,${fade * 0.5})`; ctx.fill();
+  });
+
+  requestAnimationFrame(draw);
+}
+
+window.addEventListener('resize', resize);
+resize();
+draw();
+</script>
+
+<script>
+/* ────────────────────────────────────────────────────────────────
+   PREDICTION LOGIC + AI ADVICE + CHARTS
+   ──────────────────────────────────────────────────────────────── */
+
+let trendC = null, donutC = null, barC = null;
+const historyLog = [];
+
+function openPredictor() {
+  const panel = document.getElementById('predictionPanel');
+  panel.style.display = 'block';
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function runPrediction() {
+  const name   = document.getElementById('studentName').value.trim() || 'Student';
+  const sid    = document.getElementById('studentId').value.trim()   || 'N/A';
+  const dept   = document.getElementById('dept').value;
+  const sem    = document.getElementById('sem').value;
+  const total  = parseInt(document.getElementById('totalClasses').value) || 90;
+  const attend = parseInt(document.getElementById('attended').value)      || 72;
+  const absent = parseInt(document.getElementById('absentDays').value)    || 4;
+  const dist   = parseInt(document.getElementById('distance').value)      || 10;
+  const gpa    = parseFloat(document.getElementById('gpa').value)         || 7.5;
+  const health = document.getElementById('health').value;
+  const extra  = parseInt(document.getElementById('extra').value)         || 0;
+  const family = document.getElementById('family').value;
+
+  /* ── Loading animation ── */
+  const btn = document.getElementById('predictBtn');
+  const lb  = document.getElementById('loadBar');
+  btn.disabled = true; btn.textContent = '⬡  PROCESSING AI MODEL…  ⬡';
+  lb.style.display = 'block';
+  lb.innerHTML = '<div class="loading-bar-fill"></div>';
+
+  setTimeout(() => {
+    btn.disabled = false;
+    btn.textContent = '⬡  RUN AI ATTENDANCE PREDICTION  ⬡';
+
+    /* ── PREDICTION MODEL ── */
+    const currentPct = Math.round((attend / total) * 100);
+
+    let riskScore = 0;
+    if (currentPct < 75)   riskScore += 35;
+    else if (currentPct < 85) riskScore += 15;
+    if (absent > 5)  riskScore += 20;
+    else if (absent > 3) riskScore += 10;
+    if (health === 'major')    riskScore += 20;
+    else if (health === 'moderate') riskScore += 10;
+    else if (health === 'minor') riskScore += 5;
+    if (extra >= 2) riskScore += 10;
+    if (family === 'critical')   riskScore += 15;
+    else if (family === 'moderate') riskScore += 7;
+    if (dist > 25) riskScore += 8;
+    if (gpa < 6)   riskScore += 10;
+    riskScore = Math.min(riskScore, 100);
+
+    /* Predicted end-term: blend trend + risk penalty */
+    const remainingClasses = Math.round(total * 0.4);
+    const predictedAttended = Math.round(attend + remainingClasses * (1 - riskScore / 200));
+    const predictedTotal    = total + remainingClasses;
+    const predictedPct      = Math.round((predictedAttended / predictedTotal) * 100);
+
+    /* Classes needed to reach 75% */
+    const needed75 = Math.max(0, Math.ceil(0.75 * total - attend));
+
+    const eligible = predictedPct >= 75 ? 'YES ✓' : 'NO ✗';
+    const confidence = Math.round(88 - riskScore * 0.15 + Math.random() * 5);
+
+    /* ── Fill result cards ── */
+    const setCard = (id, val, type) => {
+      document.getElementById('rv' + id).textContent = val;
+      if (type) {
+        document.getElementById('rc' + id).classList.remove('danger','warn');
+        document.getElementById('rc' + id).classList.add(type);
+      }
+    };
+
+    setCard(1, currentPct + '%',   currentPct < 75 ? 'danger' : currentPct < 85 ? 'warn' : '');
+    setCard(2, predictedPct + '%', predictedPct < 75 ? 'danger' : predictedPct < 85 ? 'warn' : '');
+    setCard(3, needed75);
+    setCard(4, riskScore + '%',    riskScore > 50 ? 'danger' : riskScore > 25 ? 'warn' : '');
+    setCard(5, eligible);
+    setCard(6, confidence + '%');
+
+    /* ── AI Advice text ── */
+    let advice = '';
+    if (riskScore <= 20) {
+      advice = `✅ Excellent performance, ${name}! Your attendance of ${currentPct}% is outstanding. The AI model predicts a strong end-term attendance of ${predictedPct}%. You are well above the 75% threshold. Keep maintaining your consistency and focus on academic excellence. No immediate action required.`;
+    } else if (riskScore <= 40) {
+      advice = `⚠️ ${name}, your current attendance of ${currentPct}% is acceptable but the AI model has detected ${absent} absent days this month as a risk signal. Predicted end-term attendance: ${predictedPct}%. You need to attend at least ${needed75} more classes to maintain eligibility. Reduce unnecessary absences and consult your mentor.`;
+    } else if (riskScore <= 65) {
+      advice = `🔴 Alert! ${name}'s attendance (${currentPct}%) is in the danger zone. The AI model flags risk factors: ${health !== 'none' ? 'health concerns, ' : ''}${extra >= 2 ? 'heavy extracurricular load, ' : ''}${dist > 25 ? 'long commute distance, ' : ''}${family === 'critical' ? 'family stress, ' : ''}causing a risk score of ${riskScore}%. Immediate action needed — attend all remaining classes (${needed75} more) to become eligible.`;
+    } else {
+      advice = `🚨 CRITICAL ALERT for ${name}! Risk score: ${riskScore}%. Predicted end-term attendance: ${predictedPct}% — BELOW the 75% minimum. Exam eligibility is at risk. The AI recommends: (1) Seek medical documentation if health is the cause, (2) Apply for attendance condonation, (3) Meet HOD immediately, (4) Avoid all extracurricular activities until attendance recovers.`;
+    }
+    typeAdvice(advice);
+
+    /* ── Charts ── */
+    buildCharts(currentPct, predictedPct, riskScore);
+    drawGauge(riskScore);
+
+    /* ── History log ── */
+    addHistory(name, sid, dept, currentPct, predictedPct, riskScore);
+
+    document.getElementById('resultsSection').style.display = 'block';
+    document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+
+  }, 2600);
+}
+
+/* ── Typewriter effect for AI advice ── */
+function typeAdvice(text) {
+  const box   = document.getElementById('aiAdviceBox');
+  const el    = document.getElementById('aiAdviceText');
+  box.style.display = 'block';
+  el.innerHTML = '<span class="ai-typing"></span>';
+  const span = el.querySelector('.ai-typing');
+  let i = 0;
+  const iv = setInterval(() => {
+    span.textContent += text[i++];
+    if (i >= text.length) {
+      clearInterval(iv);
+      span.classList.remove('ai-typing');
+    }
+  }, 18);
+}
+
+/* ── Chart.js configs ── */
+const chartDefaults = {
+  color: '#7ab8d4',
+  gridColor: 'rgba(0,212,255,0.08)',
+};
+
+function buildCharts(cur, pred, risk) {
+  if (trendC) trendC.destroy();
+  if (donutC) donutC.destroy();
+  if (barC)   barC.destroy();
+
+  /* Weekly trend (simulated) */
+  const wks = ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12'];
+  const trendData = wks.map((_, i) => {
+    const base = 60 + (cur - 60) * (i / 11);
+    return Math.min(100, Math.round(base + (Math.random() - 0.5) * 8));
+  });
+  trendData.push(pred); /* projection */
+
+  trendC = new Chart(document.getElementById('trendChart'), {
+    type: 'line',
+    data: {
+      labels: [...wks, 'End-Term'],
+      datasets: [{
+        label: 'Attendance %',
+        data: trendData,
+        borderColor: '#00d4ff',
+        backgroundColor: 'rgba(0,212,255,0.08)',
+        pointBackgroundColor: trendData.map((v,i) => i === trendData.length-1 ? '#00ff88' : '#00d4ff'),
+        pointRadius: trendData.map((_,i) => i === trendData.length-1 ? 7 : 4),
+        tension: 0.4, fill: true,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: chartDefaults.color, font: { size: 10 } }, grid: { color: chartDefaults.gridColor } },
+        y: { min: 40, max: 100, ticks: { color: chartDefaults.color, font: { size: 10 } }, grid: { color: chartDefaults.gridColor } }
+      }
+    }
+  });
+
+  /* Donut */
+  donutC = new Chart(document.getElementById('donutChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Attended', 'Absent'],
+      datasets: [{
+        data: [cur, 100 - cur],
+        backgroundColor: ['rgba(0,255,136,0.8)', 'rgba(255,77,109,0.7)'],
+        borderColor: ['rgba(0,255,136,1)', 'rgba(255,77,109,1)'],
+        borderWidth: 1,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '68%',
+      plugins: {
+        legend: { labels: { color: chartDefaults.color, font: { size: 12 } } }
+      }
+    }
+  });
+
+  /* Bar (subject-wise) */
+  const subjects = ['Math','Physics','DS','OS','DBMS','Networks'];
+  const subData  = subjects.map(() => Math.round(cur + (Math.random() - 0.5) * 20));
+  const subColors = subData.map(v => v >= 75 ? 'rgba(0,255,136,0.7)' : 'rgba(255,77,109,0.7)');
+
+  barC = new Chart(document.getElementById('barChart'), {
+    type: 'bar',
+    data: {
+      labels: subjects,
+      datasets: [{
+        label: 'Attendance %',
+        data: subData,
+        backgroundColor: subColors,
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: chartDefaults.color, font: { size: 10 } }, grid: { display: false } },
+        y: { min: 30, max: 100, ticks: { color: chartDefaults.color, font: { size: 10 } }, grid: { color: chartDefaults.gridColor } }
+      }
+    }
+  });
+}
+
+/* ── Custom gauge (canvas) ── */
+function drawGauge(score) {
+  const gc   = document.getElementById('gaugeCanvas');
+  const gctx = gc.getContext('2d');
+  const cx = 140, cy = 130, r = 100;
+  gctx.clearRect(0, 0, 280, 160);
+
+  /* Track */
+  gctx.beginPath();
+  gctx.arc(cx, cy, r, Math.PI, 2 * Math.PI);
+  gctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  gctx.lineWidth = 18; gctx.stroke();
+
+  /* Colored fill */
+  const pct   = score / 100;
+  const color = score <= 30 ? '#00ff88' : score <= 60 ? '#ffd700' : '#ff4d6d';
+  gctx.beginPath();
+  gctx.arc(cx, cy, r, Math.PI, Math.PI + Math.PI * pct);
+  gctx.strokeStyle = color;
+  gctx.lineWidth = 18; gctx.stroke();
+
+  /* Needle */
+  const angle = Math.PI + Math.PI * pct;
+  gctx.beginPath();
+  gctx.moveTo(cx, cy);
+  gctx.lineTo(cx + (r - 20) * Math.cos(angle), cy + (r - 20) * Math.sin(angle));
+  gctx.strokeStyle = '#ffffff'; gctx.lineWidth = 2.5; gctx.stroke();
+  gctx.beginPath(); gctx.arc(cx, cy, 7, 0, Math.PI * 2);
+  gctx.fillStyle = color; gctx.fill();
+
+  /* Score text */
+  gctx.font = 'bold 28px Orbitron, sans-serif';
+  gctx.fillStyle = color;
+  gctx.textAlign = 'center';
+  gctx.fillText(score + '%', cx, cy - 20);
+  gctx.font = '11px Rajdhani, sans-serif';
+  gctx.fillStyle = '#7ab8d4';
+  gctx.fillText('RISK SCORE', cx, cy - 4);
+
+  /* Status badge */
+  const badge = document.getElementById('gaugeLabel');
+  badge.className = 'status-badge';
+  if (score <= 30)       { badge.textContent = '✅  SAFE';      badge.classList.add('status-safe'); }
+  else if (score <= 60)  { badge.textContent = '⚠️  AT RISK';   badge.classList.add('status-at-risk'); }
+  else                   { badge.textContent = '🚨  CRITICAL';  badge.classList.add('status-critical'); }
+}
+
+/* ── History table ── */
+function addHistory(name, sid, dept, cur, pred, risk) {
+  const statusTxt = risk <= 30 ? '🟢 Safe' : risk <= 60 ? '🟡 At Risk' : '🔴 Critical';
+  const now = new Date().toLocaleTimeString();
+  historyLog.unshift({ name, sid, dept, cur, pred, status: statusTxt, time: now });
+
+  const tbody = document.getElementById('historyBody');
+  tbody.innerHTML = historyLog.map(h => `
+    <tr>
+      <td>${h.name}</td>
+      <td>${h.sid}</td>
+      <td>${h.dept}</td>
+      <td style="color:${h.cur<75?'#ff4d6d':h.cur<85?'#ffd700':'#00ff88'}">${h.cur}%</td>
+      <td style="color:${h.pred<75?'#ff4d6d':h.pred<85?'#ffd700':'#00ff88'}">${h.pred}%</td>
+      <td>${h.status}</td>
+      <td style="color:var(--text-muted)">${h.time}</td>
+    </tr>`).join('');
+}
+</script>
+
+</body>
+</html>
